@@ -63,29 +63,42 @@ for ii in range(len(args["nsnap"])):
             args["simtype"], args["nsnap"][ii], args["nvoxel"], 'sh')
     np.save(filename, arr)
 
-    # Read particles
     if args["simtype"] == "dark_matter_only":
+        # Read particles
         s.read(["Coordinates"], parttype=[1])
+        
+        # Write dark-matter
+        pos = pd.DataFrame(s.data['Coordinates']['dm'])*s.header.hubble
+        pos.columns = ['x','y','z']
+        pos = voxeling(pos)
+        pos = counting(pos)
+        arr = structuring(pos)
+        filename = args["outdir"]+"%s_s%d_v%d_%s" % (
+                args["simtype"], args["nsnap"][ii], args["nvoxel"], 'dm')
+        np.save(filename, arr)
+
     else:
+        # Read particles
         s.read(["Coordinates"], parttype=[1, 4])
+        
+        # Write stars
+        pos = pd.DataFrame(s.data['Coordinates']['stars'])*s.header.hubble
+        pos.columns = ['x','y','z']
+        pos = voxeling(pos)
+        pos = counting(pos)
+        arr = structuring(pos)
+        filename = args["outdir"]+"%s_s%d_v%d_%s" % (
+                args["simtype"], args["nsnap"][ii], args["nvoxel"], 'st')
+        np.save(filename, arr)
    
-    # Write dark-matter
-    pos = pd.DataFrame(s.data['Coordinates']['dm'])*s.header.hubble
-    pos.columns = ['x','y','z']
-    pos = voxeling(pos)
-    pos = counting(pos)
-    arr = structuring(pos)
-    filename = args["outdir"]+"%s_s%d_v%d_%s" % (
-            args["simtype"], args["nsnap"][ii], args["nvoxel"], 'dm')
-    np.save(filename, arr)
+        # Write dark-matter
+        pos = pd.DataFrame(s.data['Coordinates']['dm'])*s.header.hubble
+        pos.columns = ['x','y','z']
+        pos = voxeling(pos)
+        pos = counting(pos)
+        arr = structuring(pos)
+        filename = args["outdir"]+"%s_s%d_v%d_%s" % (
+                args["simtype"], args["nsnap"][ii], args["nvoxel"], 'dm')
+        np.save(filename, arr)
     
-    # Write stars
-    pos = pd.DataFrame(s.data['Coordinates']['stars'])*s.header.hubble
-    pos.columns = ['x','y','z']
-    pos = voxeling(pos)
-    pos = counting(pos)
-    arr = structuring(pos)
-    filename = args["outdir"]+"%s_s%d_v%d_%s" % (
-            args["simtype"], args["nsnap"][ii], args["nvoxel"], 'st')
-    np.save(filename, arr)
     
