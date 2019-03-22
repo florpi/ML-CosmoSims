@@ -1,14 +1,23 @@
 from torch.utils import data
 import numpy as np
-#TODO Run Black
+
 
 class Dataset(data.Dataset):
     """
     Class to control dataset input into neural network.
     """
-    def __init__(self, data_path, data_partition, cosmo_type,
-                 cat='count', vel=False, aug=False, reg=False,
-                 normalize=False):
+
+    def __init__(
+        self,
+        data_path,
+        data_partition,
+        cosmo_type,
+        cat="count",
+        vel=False,
+        aug=False,
+        reg=False,
+        normalize=False,
+    ):
         """
         Initialization
 
@@ -38,7 +47,6 @@ class Dataset(data.Dataset):
         self.vel = vel
         self.normalize = normalize
 
-
     def __getitem__(self, index):
         """
         Returns
@@ -49,45 +57,73 @@ class Dataset(data.Dataset):
             Target values e.g. single stars or galaxies
         """
         # Load dark-matter catalogue
-        dmset = np.load(self.datapath+'/'+data_partition+'/'+self.cosmo_type + \
-                        '/'+self.cosmo_type+'_dm.npy')
+        dmset = np.load(
+            self.datapath
+            + "/"
+            + data_partition
+            + "/"
+            + self.cosmo_type
+            + "/"
+            + self.cosmo_type
+            + "_dm.npy"
+        )
         dmset = np.expand_dims(dmset, axis=0)
-        
+
         if self.normalize is True:
             # Normalize dark-matter data w.r.t. maximum
-            dmset = dmset/np.max(dmset)
-        
-        if self.cat == 'count':
+            dmset = dmset / np.max(dmset)
+
+        if self.cat == "count":
             # Use nr. of stars as target
-            labels = np.load(self.datapath+'/'+data_partition+'/' + \
-                             self.cosmo_type+'/'+self.cosmo_type+'_st.npy')
+            labels = np.load(
+                self.datapath
+                + "/"
+                + data_partition
+                + "/"
+                + self.cosmo_type
+                + "/"
+                + self.cosmo_type
+                + "_st.npy"
+            )
             if not self.reg:
-                #Convert python function to vector function
+                # Convert python function to vector function
                 convert = np.vectorize(self.convert_class)
                 lables = convert(labels)
-        elif self.cat == 'mass':
+        elif self.cat == "mass":
             # use mass as target
-            labels = np.load(self.datapath+'/'+data_partition+'/' + \
-                             self.cosmo_type+'/'+self.cosmo_type+'_st.npy')
+            labels = np.load(
+                self.datapath
+                + "/"
+                + data_partition
+                + "/"
+                + self.cosmo_type
+                + "/"
+                + self.cosmo_type
+                + "_st.npy"
+            )
 
         if self.aug is True:
             # Dataset augmentation
-            dim_to_flip = tuple(np.arange(3)[
-                np.random.choice(a=[False,True], size=3)
-                ]
-            )
+            dim_to_flip = tuple(np.arange(3)[np.random.choice(a=[False, True], size=3)])
             if len(dim_to_flip) > 0:
                 dmsets = np.flip(dmsets, dim_to_flip)
                 labels = np.flip(labels, dim_to_flip)
 
         if self.vel is True:
             # Add velocity info. to dm-dataset
-            veloset = np.load(self.datapath+'/'+data_partition+'/' + \
-                              self.cosmo_type+'/'+self.cosmo_type+'_dm.npy')
-            dmset = np.concatenate((dmset,veloset),axis = 0)
+            veloset = np.load(
+                self.datapath
+                + "/"
+                + data_partition
+                + "/"
+                + self.cosmo_type
+                + "/"
+                + self.cosmo_type
+                + "_dm.npy"
+            )
+            dmset = np.concatenate((dmset, veloset), axis=0)
         return dmset, labels
 
-    
     def __len__(self):
         "Denotes the total number of samples"
         return len(self.dataset)
