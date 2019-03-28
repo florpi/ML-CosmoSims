@@ -18,14 +18,11 @@ module purge
 #mkdir -p $RUNDIR
 #module load python3/intel/3.6.3
 #source /home/yw1007/myenv/bin/activate
-<<<<<<< HEAD
 modelidx=2
 target_class=0
 vel=0
 #lossweight=160
 normalize=0
-=======
-
 
 # model_idx: 
 # - 0 one layer convolution C
