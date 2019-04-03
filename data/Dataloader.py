@@ -9,12 +9,6 @@ from itertools import product
 from torch.autograd import Variable
 from dataset import Dataset
 
-params = {'batch_size': 3,
-          'shuffle': False,
-          #'shuffle': True,
-          'num_workers':20}
-max_epochs = 100
-
 training_set, validation_set = Dataset(train_data), Dataset(val_data)
 testing_set= Dataset(test_data)
 training_generator = data.DataLoader(training_set, **params)
