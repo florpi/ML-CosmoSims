@@ -47,8 +47,9 @@ EPSILON = 1e-5
 
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    
+    # input flags
     args = parse_args()
-    print("arguments: %s" % (args))
     lr = args.lr
     model_idx = args.model_idx
     epochs = args.epochs
@@ -62,12 +63,35 @@ def main():
     load_model = args.load_model
     save_name = args.save_name
     record_results = args.record_results
-    vel = args.vel
+    vel = args.vel  # not considered for now
     normalize = args.normalize
 
     data_range = 1024
     random_idx = 0
 
+    # Initialize datasets
+    training_set = Dataset(
+            train_data,
+            cat=target_cat,
+            reg=target_class,
+            vel=vel
+    )
+    validation_set = Dataset(
+            val_data,
+            cat=target_cat,
+            reg=target_class,
+            vel=vel,
+            normalize=normalize
+    )
+    testing_set = Dataset(
+            test_data,
+            cat=target_cat,
+            reg=target_class,
+            vel=vel,
+            normalize=normalize
+    )
+
+    # Define which cubes go into which dataset (train, test, validate)
     pos = list(np.arange(0, data_range, 32))
     ranges = list(product(pos, repeat=3))
     random.seed(7)
@@ -91,29 +115,9 @@ def main():
                         test_data.append(idx)
                     else:
                         train_data.append(idx)
-    # build dataloader
-    params = {"batch_size": batch_size, "shuffle": True, "num_workers": 20}
 
-    training_set = Dataset(
-            train_data,
-            cat=target_cat,
-            reg=target_class,
-            vel=vel
-    )
-    validation_set = Dataset(
-            val_data,
-            cat=target_cat,
-            reg=target_class,
-            vel=vel,
-            normalize=normalize
-    )
-    testing_set = Dataset(
-            test_data,
-            cat=target_cat,
-            reg=target_class,
-            vel=vel,
-            normalize=normalize
-    )
+    # Load dataset
+    params = {"batch_size": batch_size, "shuffle": True, "num_workers": 20}
     training_generator = data.DataLoader(training_set, **params)
     validation_generator = data.DataLoader(validation_set, **params)
     testing_generator = data.DataLoader(testing_set, **params)
