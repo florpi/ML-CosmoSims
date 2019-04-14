@@ -1,8 +1,7 @@
 import argparse
-import os
+import os, sys, glob, time
 import random
 import shutil
-import time
 import warnings
 
 import torch
@@ -21,17 +20,17 @@ from itertools import product
 import train
 import validate
 import initial_loss
-sys.path.insert(0, '/cosma5/data/dp004/dc-beck3/Dark2Light/training/')
+#sys.path.insert(0, '/cosma5/data/dp004/dc-beck3/Dark2Light/training/')
 sys.path.insert(0, '/cosma5/data/dp004/dc-beck3/Dark2Light/data/')
-sys.path.insert(0, '/cosma5/data/dp004/dc-beck3/Dark2Light/main/')
-from train_f import *
+#sys.path.insert(0, '/cosma5/data/dp004/dc-beck3/Dark2Light/main/')
+#from train_f import *
 from Dataset import Dataset
-from Models import *
-from args import args
+#from Models import *
+#from args import args
 from parse_args import parse_args
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
+print("This computer will use: %s" % device)
 
 # the following variables are global variables that record the statistics
 # for each epoch so that the plot can be produced
@@ -46,10 +45,13 @@ EPSILON = 1e-5
 
 
 def main():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
     # input flags
     args = parse_args()
+    simpath = args.simulation_path
+    snapshot_nr = args.snapshot_nr
+    voxle_nr = args.voxle_nr
     lr = args.lr
     model_idx = args.model_idx
     epochs = args.epochs
@@ -57,37 +59,39 @@ def main():
     loss_weight = args.loss_weight
     weight_decay = args.weight_decay
     print_freq = args.print_freq
-    target_cat = args.target_cat
+    label_type = args.label_type
     target_class = args.target_class
-    plot_label = args.plot_label
     load_model = args.load_model
     save_name = args.save_name
     record_results = args.record_results
     vel = args.vel  # not considered for now
     normalize = args.normalize
 
+    simfile = glob.glob("%s*%d*%d.npy" %(simpath, snapshot_nr, voxle_nr))
+    print("simfile", simfile)
+
     data_range = 1024
     random_idx = 0
+    train_data = [(832, 640, 224),(864, 640, 224)]
+    val_data = [(832, 640, 224),(864, 640, 224)]
+    test_data = [(832, 640, 224),(864, 640, 224)]
 
     # Initialize datasets
     training_set = Dataset(
             train_data,
-            cat=target_cat,
+            cat=label_type,
             reg=target_class,
-            vel=vel
     )
     validation_set = Dataset(
             val_data,
-            cat=target_cat,
+            cat=label_type,
             reg=target_class,
-            vel=vel,
             normalize=normalize
     )
     testing_set = Dataset(
             test_data,
-            cat=target_cat,
+            cat=label_type,
             reg=target_class,
-            vel=vel,
             normalize=normalize
     )
 
@@ -122,7 +126,7 @@ def main():
     validation_generator = data.DataLoader(validation_set, **params)
     testing_generator = data.DataLoader(testing_set, **params)
 
-    # #set up device
+    # set up device
 
     # #build model
     dim_out = 1
