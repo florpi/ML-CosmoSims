@@ -4,10 +4,16 @@ def parse_args():
     """
     """
     parser = argparse.ArgumentParser(description="main.py")
-    parser.add_argument("--weight_decay", type=float, default=0.0, help="")
-    parser.add_argument("--print_freq", type=int, default=400, help="")
+
+    # Parameters for Dataset
     parser.add_argument(
-            "--simulation_path",
+            "--features_path",
+            type=str,
+            default='/cosma5/data/dp004/dc-beck3/Dark2Light/data/dark_matter_only/',
+            help="path to datasets used to train,validate,test",
+    )
+    parser.add_argument(
+            "--targets_path",
             type=str,
             default='/cosma5/data/dp004/dc-beck3/Dark2Light/data/full_physics/',
             help="path to datasets used to train,validate,test",
@@ -24,6 +30,10 @@ def parse_args():
             default=1024,
             help="Nr. of elements in which simulation box is devided",
     )
+
+    # Parameters for ML-algorithm
+    parser.add_argument("--weight_decay", type=float, default=0.0, help="")
+    parser.add_argument("--print_freq", type=int, default=400, help="")
     parser.add_argument("--lr", type=float, default=0.001, help="learning rate")
     parser.add_argument(
         "--model_idx",
