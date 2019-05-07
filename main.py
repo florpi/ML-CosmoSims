@@ -16,20 +16,16 @@ import random
 import numpy as np
 from itertools import product
 
+from parse_args import parse_args
 import train
 import validate
 import initial_loss
-#sys.path.insert(0, '/cosma7/data/dp004/dc-beck3/Dark2Light/training/')
 sys.path.insert(0, '/cosma7/data/dp004/dc-beck3/Dark2Light/data/')
-#sys.path.insert(0, '/cosma7/data/dp004/dc-beck3/Dark2Light/main/')
-#from train_f import *
 from Dataset import Dataset
-#from Models import *
-#from args import args
-from parse_args import parse_args
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print("This computer will use: %s" % device)
+sys.path.insert(0, '/cosma7/data/dp004/dc-beck3/Dark2Light/networks/')
+from Models import *
+#sys.path.insert(0, '/cosma7/data/dp004/dc-beck3/Dark2Light/training/')
+#from train_f import *
 
 # the following variables are global variables that record the statistics
 # for each epoch so that the plot can be produced
@@ -43,7 +39,9 @@ EPSILON = 1e-5
 
 
 def main():
-    #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # Find out if GPUs or CPUs are available
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print("This computer will use: %s" % device)
     
     # Input flags
     ## Parameters for datasets
@@ -130,11 +128,14 @@ def main():
     validation_generator = data.DataLoader(validation_set, **params)
     testing_generator = data.DataLoader(testing_set, **params)
 
-    # set up device
-
-    # #build model
+    # Build model
     dim_out = 1
-    #model = SimpleUnet(dim, target_class).to(device)
+    if vel == 1:
+        dim_in = 4
+    else:
+        dim_in = 1
+        dim = 1  # need to be changed later
+    model = SimpleUnet(dim, target_class).to(device)
 
     #model = torch.load("pretrained/mytraining.pt")
     #criterion = nn.CrossEntropyLoss(

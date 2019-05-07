@@ -1,11 +1,14 @@
+import sys
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 import torch.optim
 
-from args import args
+sys.path.insert(0, '/cosma7/data/dp004/dc-beck3/Dark2Light/training/')
 from train_f import *
+sys.path.insert(0, '/cosma7/data/dp004/dc-beck3/Dark2Light/data/')
 from Dataset import Dataset
 
 class Baseline(nn.Module):
@@ -68,69 +71,6 @@ class SimpleUnet(nn.Module):
             cube=linear.reshape([b_size,32,32,32])
 
         return cube
-
-# class BasicConv3d(nn.Module):
-
-#     def __init__(self, in_channels, out_channels, **kwargs):
-#         super(BasicConv3d, self).__init__()
-#         self.conv = nn.Conv3d(in_channels, out_channels, bias=False, **kwargs)
-
-#     def forward(self, x):
-#         x = self.conv(x)
-#         return F.relu(x, inplace=True)
-
-
-# class InceptionE(nn.Module):
-
-#     def __init__(self, in_channels, conv1_out, conv3_out, conv5_out):
-#         super(InceptionE, self).__init__()
-#         self.pool_out = 3
-#         self.conv1_out = conv1_out
-#         self.conv3_out = conv3_out
-#         self.conv5_out = conv5_out
-#         self.branch1x1 = BasicConv3d(in_channels, self.conv1_out, kernel_size=1)
-
-#         self.branch3x3 = BasicConv3d(in_channels, self.conv3_out, kernel_size=3, padding = 1)
-        
-
-#         self.branch5x5 = BasicConv3d(in_channels, self.conv5_out, kernel_size=5, padding = 2)
-#         self.branch_pool = BasicConv3d(in_channels, self.pool_out, kernel_size=1)
-
-
-#     def forward(self, x):
-#         branch1x1 = self.branch1x1(x)
-
-#         branch3x3 = self.branch3x3(x)
-        
-#         branch5x5 = self.branch5x5(x)
-        
-#         branch_pool = F.avg_pool3d(x, kernel_size=3, stride=1, padding=1)
-#         branch_pool = self.branch_pool(branch_pool)
-#         outputs = [branch1x1, branch3x3, branch5x5, branch_pool]
-#         return torch.cat(outputs, 1)
-
-
-# class Inception(nn.Module):
-#     def __init__(self, channels, conv1_out, conv3_out, conv5_out):
-#         super(Inception, self).__init__()
-#         self.conv1_out = conv1_out
-#         self.conv3_out = conv3_out
-#         self.conv5_out = conv5_out
-#         self.incep = InceptionE(channels, conv1_out = conv1_out, conv3_out = conv3_out, conv5_out = conv5_out)
-#         conv_in = conv1_out + conv3_out + conv5_out + 3
-#         self.conv1 = BasicConv3d(conv_in, conv_in, kernel_size = 3, padding = 1)
-#         self.conv2 = BasicConv3d(conv_in, conv_in//2, kernel_size = 3, padding = 1)
-#         self.conv3 = BasicConv3d(conv_in//2, 2, kernel_size = 1)
-#     def forward(self, x):
-#         b_size = x.size(0)
-#         incep1 = self.incep(x)
-#         #print('incep1 = ', incep1.size())
-#         conv1=self.conv1(incep1)
-#         conv2=self.conv2(conv1) 
-#         conv3=self.conv3(conv2)
-#         return conv3
-
-
 
 
 class BasicConv3d(nn.Module):
@@ -202,14 +142,9 @@ class Inception(nn.Module):
         return conv3
 
 
-
-
-
-
-
 class GridAttentionBlock3D(nn.Module):
-    def __init__(self, in_channels, inter_channels=None, dimension=3, mode='concatenation',
-                 sub_sample_factor=(2,2,2)):
+    def __init__(self, in_channels, inter_channels=None, dimension=3,
+                 mode='concatenation', sub_sample_factor=(2,2,2)):
         super(GridAttentionBlock3D, self).__init__()
 
         assert dimension in [2, 3]
@@ -479,8 +414,6 @@ class R2Unet(nn.Module):
         return x14
 
 
-
-
 class one_layer_conv(nn.Module):
     def __init__(self,in_channels, one_layer_outchannel, kernel_size, non_linearity, transformation, power):
         super(one_layer_conv,self).__init__()
@@ -509,8 +442,6 @@ class one_layer_conv(nn.Module):
             raise ValueError('Wrong data preprocessing procedure!')
             X = X/10
         return self.model(X)
-
-    
     
 
 class two_phase_conv(nn.Module):
