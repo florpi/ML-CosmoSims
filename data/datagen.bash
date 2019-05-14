@@ -17,7 +17,7 @@ module load gnu_comp/7.3.0 openmpi python/3.6.5
 #simtype=dark_matter_only   #[dark_matter_only, full_physics]
 simtype=full_physics   #[dark_matter_only, full_physics]
 simdir=/cosma6/data/dp004/dc-arno1/SZ_project/${simtype}/L62_N512_GR/
-outdir=/cosma5/data/dp004/dc-beck3/Dark2Light/data/${simtype}/
+outdir=/cosma6/data/dp004/dc-cues1/Dark2Light/data/${simtype}/
 nsnap=(45 44)
 #(45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22)
 nvoxel=512 # number of voxels per box edge
