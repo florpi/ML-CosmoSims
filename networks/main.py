@@ -27,72 +27,67 @@ from args import args
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 print(device)
 
-# the following four variables are global variables that record the statistics 
+# the following variables are global variables that record the statistics 
 # for each epoch so that the plot can be produced
-TRAIN_LOSS,VAL_LOSS, VAL_ACC, VAL_RECALL, VAL_PRECISION = [],[],[],[],[]
+TRAIN_LOSS, VAL_LOSS, VAL_ACC, VAL_RECALL, VAL_PRECISION = [],[],[],[],[]
 BEST_VAL_LOSS = 999999999
 BEST_RECALL = 0
 BEST_PRECISION = 0
 BEST_F1SCORE = 0
 BEST_ACC = 0
 EPSILON = 1e-5
-if not os.path.exists('pretrained'):
-    os.makedirs('pretrained')
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="main.py")
-
-    
-    parser.add_argument('--mini', type=int, default=0,
-                        help='whether to use mini dataset.')
-    parser.add_argument('--medium1', type=int, default=0,
-                        help='whether to use medium dataset.(2% of the data)')
-    parser.add_argument('--medium', type=int, default=0,
-                        help='whether to use medium dataset.(12.5% of the data)')
     parser.add_argument('--weight_decay', type=float, default=0.0,
                         help='')
     parser.add_argument('--print_freq', type=int, default=400,
                         help='')
     parser.add_argument('--lr', type=float, default=0.001,
                         help='learning rate')
-    parser.add_argument('--model_idx', type=int, default=0,
-                        help='0:Unet, 1:baseline 2: Inception 3. R2Unet 4.two-phase model(classfication phase: one layer Conv, regression phase: R2Unet)\
-                         5.two-phase model(classfication phase: R2Unet, regression phase: R2Unet) 6. R2Unet attention \
-                         7. two-phase model(classfication phase: Inception, regression phase: R2Unet) 8. Incetion regression')
+    parser.add_argument(
+            '--model_idx', type=int, default=0,
+            help='0: Unet,
+                  1: Baseline
+                  2: Inception
+                  3: R2Unet
+                  4: two-phase model(
+                     classfication phase: one layer Conv,
+                     regression phase: R2Unet)\
+                  5: two-phase model(
+                     classfication phase: R2Unet,
+                     regression phase: R2Unet)
+                  6: R2Unet attention \
+                  7: two-phase model(
+                     classfication phase: Inception,
+                     regression phase: R2Unet)
+                  8: Incetion regression')
     parser.add_argument('--epochs', type=int, default=20,
                         help='number of epochs')
     parser.add_argument('--batch_size', type=int, default=16,
                         help='Batch size.')
-    parser.add_argument('--loss_weight', type=float, default=20,
-                        help='weight of the loss equals to normalized [x, loss_weight * x,loss_weight * x]')
-    parser.add_argument('--target_cat', default='count',
-                        help='the target cube we want to predict, count or mass')
+    parser.add_argument(
+            '--loss_weight', type=float, default=20,
+            help='weight of the loss equals to normalized
+                  [x, loss_weight * x,loss_weight * x]')
+    parser.add_argument(
+            '--target_cat', default='count',
+            help='the target cube we want to predict, count or mass')
     parser.add_argument('--target_class', type = int, default= 0,
                         help='0:classification 1:regression')
-    parser.add_argument('--plot_label', default= '',
-                        help='label for the filename of the plot. If left default, \
-                        the plot_label will be \'_\' + target_class + \'_\' + target_cat. \
-                        This label is for eliminating risk of overwriting previous plot')
     parser.add_argument('--load_model', type=int, default=0,
                         help='')
     parser.add_argument('--save_name', default='',
                         help='the name of the saved model file, default don\'t save')
-    parser.add_argument('--conv1_out', type=int, default=6,
-                        help='number of hidden units for the size = 1 kernel')
-    parser.add_argument('--conv3_out', type=int, default=8,
-                        help='number of hidden units for the size = 3 kernel')
-    parser.add_argument('--conv5_out', type=int, default=10,
-                        help='number of hidden units for the size = 5 kernel')
     parser.add_argument('--record_results', type=int, default=0,
                         help='whether to write the best results to all_results.txt')
-    parser.add_argument('--yfloss_weight', type=float, default=0,
-                        help='')
-    parser.add_argument('--vel', type=int, default=0,
-                        help='whether to include velocity to the input(input dim 1 if not, 4 if yes)')
+    parser.add_argument(
+            '--vel', type=int, default=0,
+            help='whether to include velocity to the input
+                  (input dim 1 if not, 4 if yes)')
     parser.add_argument('--normalize', type=int, default=0,
                         help='whether to normalize the input(dark matter density)')
-    parser.add_argument('--C_model', default="",
-                        help='classfication model name for the two-phase model')
 
     return parser.parse_args()
 
@@ -172,13 +167,11 @@ def initial_loss(train_loader, val_loader, model, criterion, target_class):
         print('Epoch Train Loss {train_losses.avg:.4f}, Test Loss {val_losses.avg:.4f}'\
             .format(train_losses = train_losses, val_losses=val_losses))
 
+
 def train(train_loader, model, criterion, optimizer, epoch, print_freq, target_class):
-
-
     batch_time = AverageMeter()
     losses = AverageMeter()
     data_time = AverageMeter()
-
 
     # switch to train mode
     model.train()
@@ -220,7 +213,6 @@ def train(train_loader, model, criterion, optimizer, epoch, print_freq, target_c
     TRAIN_LOSS.append(losses.avg)
     print('Epoch {0} : Train: Loss {loss.avg:.4f}\t'.format(epoch, loss=losses))
     
-
 
 def validate(val_loader, model, criterion, epoch, target_class, save_name):
     global BEST_VAL_LOSS
@@ -291,12 +283,8 @@ def validate(val_loader, model, criterion, epoch, target_class, save_name):
 
 def main():
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
     args = parse_args()
     print("arguments: %s" %(args))
-    mini = args.mini
-    medium = args.medium
-    medium1 = args.medium1
     lr = args.lr
     model_idx = args.model_idx
     epochs = args.epochs
@@ -309,53 +297,35 @@ def main():
     plot_label = args.plot_label
     load_model = args.load_model
     save_name = args.save_name
-    conv1_out, conv3_out, conv5_out = args.conv1_out, args.conv3_out, args.conv5_out
     record_results = args.record_results
-    yfloss_weight = torch.Tensor([args.yfloss_weight]).to(device)
     vel = args.vel
     normalize = args.normalize
-    C_model = args.C_model
 
-
-    #index for the cube, each tuple corresponds to a cude
-    #test data
-    if mini:
-        train_data = [(832, 640, 224),(864, 640, 224)]
-        val_data = [(832, 640, 224),(864, 640, 224)]
-        test_data = [(832, 640, 224),(864, 640, 224)]
+    data_range = 1024
+    random_idx = 0
+    
+    pos=list(np.arange(0,data_range,32))
+    ranges=list(product(pos,repeat=3))
+    random.seed(7)
+    if random_idx == 1:
+        random.shuffle(ranges)
+        train_data = ranges[:int(np.round(len(ranges)*0.6))]
+        val_data=ranges[int(np.round(len(ranges)*0.6)):int(np.round(len(ranges)*0.8))]
+        test_data = ranges[int(np.round(len(ranges)*0.8)):]
     else:
-        if medium1:
-            data_range = 130
-            random_idx = 1
-        elif medium:
-            data_range = 512
-            random_idx = 1
-        else:
-            data_range = 1024
-            random_idx = 0
-        
-        pos=list(np.arange(0,data_range,32))
-        ranges=list(product(pos,repeat=3))
-        random.seed(7)
-        if random_idx == 1:
-            random.shuffle(ranges)
-            train_data = ranges[:int(np.round(len(ranges)*0.6))]
-            val_data=ranges[int(np.round(len(ranges)*0.6)):int(np.round(len(ranges)*0.8))]
-            test_data = ranges[int(np.round(len(ranges)*0.8)):]
-        else:
-            train_data, val_data, test_data = [],[],[]
+        train_data, val_data, test_data = [],[],[]
 
-            for i in range(0,data_range,32):
-                for j in range(0,data_range,32):
-                    for k in range(0,data_range,32):
-                        idx = (i,j,k)
-                        if i <=416 and j<= 416:
-                            val_data.append(idx)
-                        elif i>=484 and j>= 448 and k>= 448:
-                            test_data.append(idx)
-                        else:
-                            train_data.append(idx)
-    # #build dataloader
+        for i in range(0,data_range,32):
+            for j in range(0,data_range,32):
+                for k in range(0,data_range,32):
+                    idx = (i,j,k)
+                    if i <=416 and j<= 416:
+                        val_data.append(idx)
+                    elif i>=484 and j>= 448 and k>= 448:
+                        test_data.append(idx)
+                    else:
+                        train_data.append(idx)
+    #build dataloader
     params = {'batch_size': batch_size,
           'shuffle': True,
           'num_workers':20}
@@ -387,9 +357,13 @@ def main():
     elif model_idx == 3:
         model = R2Unet(dim_in, dim_out, t = 3, reg = target_class).to(device)
     elif model_idx == 4:
-        mask_model = one_layer_conv(dim,one_layer_outchannel = 8,kernel_size = 3,non_linearity = 'ReLU6', transformation = 'sqrt_root'
-                                    , power = 0.25).to(device)
-        #state_dict = torch.load('../trained_model/epoch_10_MSE.pth')
+        mask_model = one_layer_conv(
+                dim, 
+                one_layer_outchannel=8,
+                kernel_size=3,
+                non_linearity='ReLU6',
+                transformation='sqrt_root',
+                power=0.25).to(device)
         state_dict = torch.load('./pretrained/' + C_model + '.pth')
         mask_model.load_state_dict('state_dict')
         pred_model = R2Unet(dim,dim,t=3,reg = target_class).to(device)

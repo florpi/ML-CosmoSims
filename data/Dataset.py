@@ -4,14 +4,14 @@ import numpy as np
 
 class Dataset(data.Dataset):
     """
-    Class to control dataset input into neural network.
+    Class to control dataset input into ML-algorithm.
     """
 
     def __init__(
         self,
-        data_path,
-        data_partition,
-        cosmo_type,
+        catalogue_ids,
+        features_file,
+        targets_file,
         cat="count",
         vel=False,
         aug=False,
@@ -24,11 +24,9 @@ class Dataset(data.Dataset):
         Parameters
         ----------
         data_path : str
-            The path to the directory in which dataset is found
-        data_partition : str
-            Indicates whether to use training, testing, or validating
-        cosmo_type : str
-            Indicates whether to use dark-matter-only or full-physics simulations
+            The path to the file in which data-set is found
+        label_path : str
+            The path to the file in which label-set is found
         cat : str
             Define which target data to use. Can be either 'mass' or 'count'
         vel : boolean
@@ -38,92 +36,81 @@ class Dataset(data.Dataset):
         reg : boolean
             ???
         """
-        self.data_path = data_path
-        self.data_partition = data_partition
-        self.cosmo_type = cosmo_type
+        self.ids = catalogue_ids
+        self.features_file = features_file
+        self.targets_file = targets_file
         self.target = cat
         self.aug = aug
         self.reg = reg
         self.vel = vel
         self.normalize = normalize
 
-    def __getitem__(self, index):
+    def __getitem__(
+            self,
+            index,
+    ):
         """
+        Parameters
+        ----------
+        index : list
+            Coordinates of the voxels in the data-set
+        **params : dict
+            batch-size, shuffle, num_workers
+        
         Returns
         -------
-        dmset : np.ndarray
+        feature_boxes : np.ndarray
             Dark-matter input
-        labels : np.ndarray
+        target_boxes : np.ndarray
             Target values e.g. single stars or galaxies
         """
         # Load dark-matter catalogue
-        dmset = np.load(
-            self.datapath
-            + "/"
-            + data_partition
-            + "/"
-            + self.cosmo_type
-            + "/"
-            + self.cosmo_type
-            + "_dm.npy"
-        )
-        dmset = np.expand_dims(dmset, axis=0)
+        feature_boxes = np.load(self.features_file)  #3D
+        feature_boxes = [feature_boxes[xx] for xx in self.ids]
+        feature_boxes = np.expand_dims(feature_boxes, axis=0)  #4D
 
         if self.normalize is True:
             # Normalize dark-matter data w.r.t. maximum
-            dmset = dmset / np.max(dmset)
+            feature_boxes = feature_boxes / np.max(feature_boxes)
 
-        if self.cat == "count":
+        if self.target == "count":
             # Use nr. of stars as target
-            labels = np.load(
-                self.datapath
-                + "/"
-                + data_partition
-                + "/"
-                + self.cosmo_type
-                + "/"
-                + self.cosmo_type
-                + "_st.npy"
-            )
+            target_boxes = np.load(self.targets_file)
+            target_boxes = [target_boxes[xx] for xx in self.ids]
             if not self.reg:
                 # Convert python function to vector function
                 convert = np.vectorize(self.convert_class)
-                lables = convert(labels)
-        elif self.cat == "mass":
+                target_boxes = convert(target_boxes)
+
+        elif self.target == "mass":
             # use mass as target
-            labels = np.load(
-                self.datapath
-                + "/"
-                + data_partition
-                + "/"
-                + self.cosmo_type
-                + "/"
-                + self.cosmo_type
-                + "_st.npy"
-            )
+            target_boxes = np.load(self.targets_file)
 
         if self.aug is True:
             # Dataset augmentation
-            dim_to_flip = tuple(np.arange(3)[np.random.choice(a=[False, True], size=3)])
-            if len(dim_to_flip) > 0:
-                dmsets = np.flip(dmsets, dim_to_flip)
-                labels = np.flip(labels, dim_to_flip)
-
-        if self.vel is True:
-            # Add velocity info. to dm-dataset
-            veloset = np.load(
-                self.datapath
-                + "/"
-                + data_partition
-                + "/"
-                + self.cosmo_type
-                + "/"
-                + self.cosmo_type
-                + "_dm.npy"
+            dim_to_flip = tuple(
+                np.arange(3)[np.random.choice(a=[False, True], 
+                size=3)]
             )
-            dmset = np.concatenate((dmset, veloset), axis=0)
-        return dmset, labels
+            if len(dim_to_flip) > 0:
+                dmboxes = np.flip(feature_boxes, dim_to_flip)
+                target_boxes = np.flip(target_boxes, dim_to_flip)
+
+        #if self.vel is True:
+        #    # Add velocity info. to dm-dataset
+        #    veloset = np.load()
+        #    dmboxes = np.concatenate((dmboxes, veloset), axis=0)
+
+        return feature_boxes, target_boxes
 
     def __len__(self):
         "Denotes the total number of samples"
-        return len(self.dataset)
+        return len(self.ids)
+
+    def convert_class(self, num):
+        if num==0:
+            return 0
+        elif num>0:
+            return 1
+        else:
+            print('dark matter mass smaller than 0')
