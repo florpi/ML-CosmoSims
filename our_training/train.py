@@ -3,39 +3,68 @@ import torch
 import numpy as np
 import pandas as pd
 from torch.utils import data
+import torch.nn as nn
 from Dataset import Dataset
+from  Models import SegNet
 
 # CUDA for pytorch
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
+
+device = "cpu"
+
 #cudnn.benchmark = True
 
 # Parameters
-params = {"batch_size": 3,
+params = {"batch_size": 1,
 	"shuffle": True,
 	"num_workers": 20
 	}
-max_epochs = 100
+
+max_epochs = 2 
+learning_rate = 0.001
 
 partition = {'train': ['id-1', 'id-2', 'id-3'], 'validation': ['id-4']}
-label = {'id-1': 0, 'id-2': 1, 'id-3': 2, 'id-4': 1}
+#labels = {'id-1': 0, 'id-2': 1, 'id-3': 2, 'id-4': 1}
 
 
-training_set = Dataset(partition["train"], labels)
-trainning_generator = data.DataLoader(training_set, **params)
+training_set = Dataset(partition["train"])
+training_generator = data.DataLoader(training_set, **params)
 
-validation_set = Dataset(partition["validation"], labels)
+validation_set = Dataset(partition["validation"])
 validation_generator = data.DataLoader(validation_set, **params)
 
+#unique_values = list(set(labels.values()))
+#num_classes = len(unique_values)
+
+num_classes = 3
+
+model = SegNet(num_classes, 1, 1.).to(device)
+
+model = model.double()
+
+# Loss and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+total_step = len(training_generator)
 
 for epoch in range(max_epochs):
-	for local_batch, local_labels in training_genertor:
+	for local_batch, local_labels in training_generator:
 		# Transfer to GPU
 		local_batch, local_labels = local_batch.to(device), local_labels.to(device)
+		
+		# Forward pass
+		outputs = model(local_batch.unsqueeze(0).double())
+		loss = criterion(outputs, local_labels)
 
-		print(local_batch)
+		# Backward and optimize
+		optimizer.zero_grad()
+		loss.backward()
+		optimizer.step()
 
-		# Model:
+		if (epoch+1) % 1 == 0:
+				print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch+1, max_epochs, epoch+1, total_step, loss.item()))
 
 	with torch.set_grad_enabled(False):
 		for local_batch, local_labels in validation_generator:

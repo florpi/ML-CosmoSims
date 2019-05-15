@@ -6,9 +6,8 @@ import h5py
 
 class Dataset(data.Dataset):
 
-	def __init__(self, list_IDs, labels):
+	def __init__(self, list_IDs):
 
-		self.labels = labels 
 		self.list_IDs = list_IDs
 
 	def __len__(self):
@@ -21,10 +20,13 @@ class Dataset(data.Dataset):
 		# Select sample
 		ID = self.list_IDs[index]
 
+		data_filename = "test.hdf5"
+		labels_filename = "labels.hdf5"
 		# Load data and get label
 		#X = torch.load('data/' + ID + '.pt')
-		X = h5py.File(data_filename)[str(ID)][:]
-		y = self.labels[ID]
+		X = h5py.File(data_filename)[str(ID)][...]
+
+		y = h5py.File(labels_filename)[str(ID)][...]
 
 		return X, y
 

@@ -11,4 +11,21 @@ f = h5py.File("test.hdf5", "w")
 for vi in woxel_ids:
 	f.create_dataset('id-' + str(vi+1), data = n_particles[vi])
 
+f.close()
+
+
+labels = np.random.randint(0,2,size = (20, 32,32,32))
+
+
+f = h5py.File("labels.hdf5", "w")
+
+for vi in woxel_ids:
+	f.create_dataset('id-' + str(vi+1), data = labels[vi])
+
+f.close()
+
+
+
+
+
 
