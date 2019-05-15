@@ -60,7 +60,9 @@ def structuring(positions):
 for ii in range(len(args["nsnap"])):
     args["nsnap"][ii] = int(args["nsnap"][ii])
     print("load df", args["nsnap"][ii], args["simdir"])
-    s = read_hdf5.snapshot(args["nsnap"][ii], args["simdir"])
+    s = read_hdf5.snapshot(
+        args["nsnap"][ii], args["simdir"], check_total_particle_number=True
+    )
 
     # Read subhalos
     s.group_catalog(["SubhaloPos"])
@@ -98,7 +100,8 @@ for ii in range(len(args["nsnap"])):
 
     else:
         # Read particles
-        s.read(["Coordinates"], parttype=[1, 4])
+        s.read(["Coordinates"], parttype=[1])
+        # s.read(["Coordinates"], parttype=[1, 4])
 
         # Write stars
         pos = pd.DataFrame(s.data["Coordinates"]["stars"]) * s.header.hubble
