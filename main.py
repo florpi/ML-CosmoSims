@@ -9,6 +9,8 @@ from torchsummary import summary
 
 
 # *************************************************** INPUT PARAMETERS ******************************************************#
+
+# TODO: Change to parse args
 partition = {'train': ['id-1', 'id-2', 'id-3'], 'validation': ['id-4']}
 BATCH_SIZE = 2
 LEARNING_RATE = 0.001
@@ -16,8 +18,6 @@ MAX_EPOCHS = 2
 
 
 # ************************************************* INITIALIZE NETWORK ******************************************************#
-
-
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
 
@@ -35,7 +35,6 @@ validation_generator = data.DataLoader(
 # initialize model
 model = SegNet().to(device)
 model = model.double()
-#summary(model, input_size=(1, 32, 32, 32))
 
 # set loss function and optimizer
 # TODO: weigths
