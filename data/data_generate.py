@@ -19,68 +19,69 @@ args["Lbox"] = float(sys.argv[7])
 
 # Functions --------------------------------------------------------------------
 def voxeling(positions):
-    "Put particles in voxels"
-    positions["x_b"] = (
-        np.floor(positions["x"] / (args["Lbox"] / args["num_child_voxel"]))
-    ).astype(int)
-    positions["y_b"] = (
-        np.floor(positions["y"] / (args["Lbox"] / args["num_child_voxel"]))
-    ).astype(int)
-    positions["z_b"] = (
-        np.floor(positions["z"] / (args["Lbox"] / args["num_child_voxel"]))
-    ).astype(int)
-    positions.drop(["x", "y", "z"], axis=1)
+    print("Put particles in voxels")
+    unit_change = lambda x: np.floor(x/(args["Lbox"]/args["num_child_voxel"])).astype(int)
+    positions["x"] = positions["x"].apply(unit_change)
+    positions["y"] = positions["y"].apply(unit_change)
+    positions["z"] = positions["z"].apply(unit_change)
     return positions
 
 
 def counting(positions):
-    "Count particles in a voxel"
+    print("Count particles in a voxel")
     positions["c"] = 1
     positions = (
-        positions.groupby(["x_b", "y_b", "z_b"])["c"].count().reset_index(name="count")
+        positions.groupby(["x", "y", "z"])["c"].count().reset_index(name="count")
     )
-    positions["x_b"][positions["x_b"] < 0.0] = int(0)
-    positions["y_b"][positions["y_b"] < 0.0] = int(0)
-    positions["z_b"][positions["z_b"] < 0.0] = int(0)
+    positions["x"][positions["x"] < 0.0] = int(0)
+    positions["y"][positions["y"] < 0.0] = int(0)
+    positions["z"][positions["z"] < 0.0] = int(0)
     return positions
 
 
 def structuring(positions):
-    "Create 3D data structure for output"
+    print("Create 3D data structure for output")
     dataset_shape = (
         args["num_child_voxel"],
         args["num_child_voxel"],
         args["num_child_voxel"],
     )
-    print("## 1 ##", positions["x_b"].values.min(), positions["x_b"].values.max())
-    ids = np.ravel_multi_index(positions[["x_b", "y_b", "z_b"]].values.T, dataset_shape)
+    print("## 1 ##", positions["x"].values.min(), positions["x"].values.max())
+    ids = np.ravel_multi_index(positions[["x", "y", "z"]].values.T, dataset_shape)
     arr = np.bincount(
         ids, positions["count"].values, minlength=np.prod(dataset_shape)
     ).reshape(dataset_shape)
     return arr
 
 
-def grouping(array):
-    "Create families by sorting child-voxels to their parent-voxels"
-    print(" test1", array.shape)
+def grouping_and_saving(array, fname):
+    print("Create families by sorting child-voxels to their parent-voxels")
+    hf = h5py.File(fname, "w")
+    # Group along x-axis
     x = np.asarray(np.split(array, args["num_parent_voxel"], axis=0))
+    # Group Groups along y-axis
     y = [
         np.asarray(np.split(x[ii], args["num_parent_voxel"], axis=1))
         for ii in range(args["num_parent_voxel"])
     ]
-    z = []
-    for ii in range(args["num_parent_voxel"]):
-        for jj in range(args["num_parent_voxel"]):
-            z.append(np.asarray(np.split(y[ii][jj], args["num_parent_voxel"], axis=2)))
-    init = 1
-    for ii in range(args["num_parent_voxel"] * args["num_parent_voxel"] - 1):
-        if init == 1:
-            array = np.concatenate((z[ii], z[ii + 1]), axis=0)
-            init = 0
-        else:
-            array = np.concatenate((array, z[ii + 1]), axis=0)
-    print(" test2", array.shape)
+    # Group Groups Groups along z-axis
+    for ii in range(args["num_parent_voxel"]):  # run through x-axis
+        for jj in range(args["num_parent_voxel"]):  # run through y-axis
+            arr = np.asarray(
+                np.split(y[ii][jj], args["num_parent_voxel"], axis=2)
+            )
+            for kk in range(args["num_parent_voxel"]):  # run through z-axis
+                parent_name = "parent_x%d_y%d_z%d" % (ii, jj, kk)
+                hf.create_dataset(parent_name, data=arr[kk])
+    hf.close()
     return array
+
+
+def saving(array, fname):
+    print("Save")
+    hf = h5py.File(fname, "w")
+    hf.create_dataset("child_voxels", data=array)
+    hf.close()
 
 
 # ------------------------------------------------------------------------------
@@ -92,77 +93,59 @@ for ii in range(len(args["nsnap"])):
     s = read_hdf5.snapshot(
         args["nsnap"][ii], args["simdir"], check_total_particle_number=True
     )
+    bname = args["outdir"] + "%s_s%d_v%d" % (
+        args["simtype"],
+        args["nsnap"][ii],
+        args["num_child_voxel"],
+    )
+    args["Lbox"] = args["Lbox"] * 1e3 / s.header.hubble
 
     # Read subhalos
     s.group_catalog(["SubhaloPos"])
     # Write subhalos
-    pos = pd.DataFrame(s.cat["SubhaloPos"]) * s.header.hubble / 1e3  # [Mpc/h]
+    pos = pd.DataFrame(s.cat["SubhaloPos"])  # [kpc]
     pos.columns = ["x", "y", "z"]
     pos = voxeling(pos)
     pos = counting(pos)
     arr = structuring(pos)
-    arr = grouping(arr)
-    filename = args["outdir"] + "%s_s%d_v%d_%s" % (
-        args["simtype"],
-        args["nsnap"][ii],
-        args["num_child_voxel"],
-        "sh",
-    )
-    hf = h5py.File(filename, "w")
-    hf.create_dataset("snapnum", data=lc["snapnum_box"])
-    hf.close()
-
+    saving(arr, bname+"_sh.h5")
+    #grouping_and_saving(arr, bname+"_sh.h5")
+    print("1")
     if args["simtype"] == "dark_matter_only":
+        print("2")
         # Read particles
         s.read(["Coordinates"], parttype=[1])
 
         # Write dark-matter
-        pos = pd.DataFrame(s.data["Coordinates"]["dm"]) * s.header.hubble / 1e3
+        pos = pd.DataFrame(s.data["Coordinates"]["dm"])  #[kpc]
+        print("3")
         pos.columns = ["x", "y", "z"]
         pos = voxeling(pos)
+        print("4")
         pos = counting(pos)
+        print("5")
         arr = structuring(pos)
-        arr = grouping(arr)
-        filename = args["outdir"] + "%s_s%d_v%d_%s" % (
-            args["simtype"],
-            args["nsnap"][ii],
-            args["num_child_voxel"],
-            "dm",
-        )
-        np.save(filename, arr)
+        print("6")
+        saving(arr, bname+"_dm.h5")
+        print("7")
+        #arr = grouping_and_saving(arr, bname+"_dm.h5")
 
     else:
         # Read particles
         s.read(["Coordinates"], parttype=[1, 4])
-
+        
         # Write stars
-        pos = pd.DataFrame(s.data["Coordinates"]["stars"]) * s.header.hubble / 1e3
+        pos = pd.DataFrame(s.data["Coordinates"]["stars"])  #[kpc]
         pos.columns = ["x", "y", "z"]
         pos = voxeling(pos)
         pos = counting(pos)
         arr = structuring(pos)
-        arr = grouping(arr)
-        filename = args["outdir"] + "%s_s%d_v%d_%s" % (
-            args["simtype"],
-            args["nsnap"][ii],
-            args["num_child_voxel"],
-            "st",
-        )
-        np.save(filename, arr)
+        arr = grouping_and_saving(arr, bname+"_st.h5")
 
         # Write dark-matter
-        pos = pd.DataFrame(s.data["Coordinates"]["dm"]) * s.header.hubble / 1e3
+        pos = pd.DataFrame(s.data["Coordinates"]["dm"])  #[kpc]
         pos.columns = ["x", "y", "z"]
         pos = voxeling(pos)
         pos = counting(pos)
         arr = structuring(pos)
-        arr = grouping(arr)
-        filename = args["outdir"] + "%s_s%d_v%d_%s" % (
-            args["simtype"],
-            args["nsnap"][ii],
-            args["num_child_voxel"],
-            "dm",
-        )
-        hf = h5py.File(filename, "w")
-        hf.create_dataset("parent_voxel", arr)
-        hf.close()
+        arr = grouping_and_saving(arr, bname+"_dm.h5")

@@ -2,10 +2,10 @@
 # Create dataset
 #
 #SBATCH -n 1
-#SBATCH -t 01:00:00
-#SBATCH -J TNG3001Dark 
-#SBATCH -o TNG3001Dark.out
-#SBATCH -e TNG3001Dark.err
+#SBATCH -t 01:30:00
+#SBATCH -J TNG3001 
+#SBATCH -o TNG3001.out
+#SBATCH -e TNG3001.err
 #SBATCH -p cosma7
 #SBATCH -A dp004
 #SBATCH --exclusive
@@ -20,7 +20,6 @@ simtype=dark_matter_only #[dark_matter_only, full_physics]
 simdir=/cosma7/data/TNG/TNG300-1-Dark/
 outdir=/cosma7/data/dp004/dc-beck3/Dark2Light/data/${simtype}/
 nsnap=(99)
-#(45 44 43 42 41 40 39 38 37 36 35 34 33 32 31 30 29 28 27 26 25 24 23 22)
 num_child_voxel=1024 # number of child-voxels per box edge
 num_parent_voxel=32 # number of parent-voxels per box edge
 Lbox=205  #[Mpc/h]
