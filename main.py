@@ -8,16 +8,28 @@ from networks.SegNet import SegNet
 from torchsummary import summary
 
 
-# *************************************************** INPUT PARAMETERS ******************************************************#
+# INPUT PARAMETERS *************************************************************#
+args = {}
+args["datapath"] = sys.argv[1]
+args["labelpath"] = sys.argv[2]
+args["nsnap"] = int(sys.argv[3])
+args["num_child_voxel"] = int(sys.argv[4])
+
+# file-name of data-sets
+bname = args["datapath"] + "%s_s%d_v%d_dm_train.h5" % (                                    
+    args["datapath"].split("/")[-1], 
+    args["nsnap"],
+    args["num_child_voxel"],
+)
 
 # TODO: Change to parse args
-partition = {'train': ['id-1', 'id-2', 'id-3'], 'validation': ['id-4']}
+partition = {"train": ["id-1", "id-2", "id-3"], "validation": ["id-4"]}
 BATCH_SIZE = 2
 LEARNING_RATE = 0.001
 MAX_EPOCHS = 2
 
 
-# ************************************************* INITIALIZE NETWORK ******************************************************#
+# INITIALIZE NETWORK ***********************************************************#
 use_cuda = torch.cuda.is_available()
 device = torch.device("cuda:0" if use_cuda else "cpu")
 
@@ -42,7 +54,7 @@ criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
 
-# *************************************************** TRAINING LOOP ******************************************************#
+# TRAINING LOOP ****************************************************************#
 
 TRAIN_LOSS, VAL_LOSS = [], []
 
