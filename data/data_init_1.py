@@ -101,7 +101,7 @@ for ii in range(len(args["nsnap"])):
                     )
         else:
             s.read(["Coordinates"], parttype=[1], partition=[1, 0])
-            pos = voxeling(s.data["Coordinates"]["dm"])
+            pos = voxeling(s.data["Coordinates"]["stars"])
             pos = pd.DataFrame(pos, dtype=np.int32)
             pos.columns = ["x", "y", "z"]
             pos = counting(pos)
