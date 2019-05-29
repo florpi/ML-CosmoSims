@@ -2,10 +2,10 @@
 # Create dataset
 #
 #SBATCH -n 1
-#SBATCH -t 05:00:00
-#SBATCH -J TNG3001 
-#SBATCH -o ./logs/TNG300_%j.out
-#SBATCH -e ./logs/TNG300_%j.err
+#SBATCH -t 07:00:00
+#SBATCH -J fpTNG300 
+#SBATCH -o ./logs/fpTNG300_%j.out
+#SBATCH -e ./logs/fpTNG300_%j.err
 #SBATCH -p cosma7
 #SBATCH -A dp004
 #SBATCH --exclusive
