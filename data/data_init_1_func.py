@@ -11,7 +11,7 @@ warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
 
 
 def voxeling(positions, args):
-    print("Put particles in voxels")
+    print("Put %d particles in voxels" % len(positions[:, 0]))
     scale = args["Lbox"] / args["num_child_voxel"]
     positions[:, 0] = np.floor(positions[:, 0] / scale)
     positions[:, 1] = np.floor(positions[:, 1] / scale)
@@ -20,18 +20,19 @@ def voxeling(positions, args):
 
 
 def counting(positions):
-    print("Count particles in a voxel")
+    print("Counting particles in a voxel")
     positions["c"] = pd.Series(1, dtype=np.uint64, index=positions.index)
     positions = (
-        positions.groupby(["x", "y", "z"])["c"].count().reset_index(name="c")
+        positions.groupby(["x", "y", "z"])["c"].sum().reset_index(name="c")
     )
-    positions["x"][positions["x"] < 0.0] = int(0)
-    positions["y"][positions["y"] < 0.0] = int(0)
-    positions["z"][positions["z"] < 0.0] = int(0)
+    print("Counting %d in file" % positions["c"].sum())
+    #positions["x"][positions["x"] < 0.0] = int(0)
+    #positions["y"][positions["y"] < 0.0] = int(0)
+    #positions["z"][positions["z"] < 0.0] = int(0)
     return positions
 
 
-def structuring(positions):
+def structuring(positions, args):
     print("Create 3D data structure for output")
     dataset_shape = (
         args["num_child_voxel"],
