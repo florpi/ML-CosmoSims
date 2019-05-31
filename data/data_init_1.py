@@ -7,6 +7,7 @@ import pandas as pd
 import read_hdf5
 import h5py
 from itertools import product
+import data_init_1_func as dif
 import warnings
 warnings.filterwarnings("ignore", message="numpy.dtype size changed")
 warnings.filterwarnings("ignore", message="numpy.ufunc size changed")
@@ -35,26 +36,27 @@ for ii in range(len(args["nsnap"])):
     args["Lbox"] = args["Lbox"] * 1e3 / s.header.hubble
 
     # Read subhalos
-    s.group_catalog(["SubhaloPos"])
-    pos = voxeling(s.cat["SubhaloPos"])
-    pos = pd.DataFrame(pos, dtype=np.int32)
-    pos.columns = ["x", "y", "z"]
-    pos = counting(pos)
-    arr = structuring(pos)
-    saving(arr, bname+"_sh.h5")
+    #s.group_catalog(["SubhaloPos"])
+    #pos = dif.voxeling(s.cat["SubhaloPos"], args)
+    #pos = pd.DataFrame(pos, dtype=np.int32)
+    #pos.columns = ["x", "y", "z"]
+    #pos = dif.counting(pos)
+    #arr = dif.structuring(pos, args)
+    #dif.saving(arr, bname+"_sh.h5")
 
     # Read particles
     if args["simtype"] == "dark_matter_only":
-        print("----> Write dark-matter <----")
+        print("\n ----> Write dark-matter <----")
+        print("data-set is being devided in chunks")
         if s.header.num_total[1] >= memory_cutoff: 
             pnum = 10
 
             for pp in range(pnum):
                 s.read(["Coordinates"], parttype=[1], partition=[pnum, pp])
-                pos_pp = voxeling(s.data["Coordinates"]["dm"])
+                pos_pp = dif.voxeling(s.data["Coordinates"]["dm"], args)
                 pos_pp = pd.DataFrame(pos_pp, dtype=np.int32)
                 pos_pp.columns = ["x", "y", "z"]
-                pos_pp = counting(pos_pp)
+                pos_pp = dif.counting(pos_pp)
 
                 if pp == 0:
                     pos = pos_pp
@@ -62,33 +64,34 @@ for ii in range(len(args["nsnap"])):
                     pos = pd.concat([pos, pos_pp])
                     pos = (
                         pos.groupby(["x", "y", "z"])["c"]
-                        .count()
+                        .sum()
                         .reset_index(name="c")
                     )
                 print("dataframes", pos_pp.shape, pos.shape, pos.columns)
         else:
             s.read(["Coordinates"], parttype=[1], partition=[1, 0])
-            pos = voxeling(s.data["Coordinates"]["dm"])
+            pos = dif.voxeling(s.data["Coordinates"]["dm"], args)
             del s
             gc.collect()
             pos = pd.DataFrame(pos, dtype=np.int32)
             pos.columns = ["x", "y", "z"]
-            pos = counting(pos)
+            pos = dif.counting(pos)
 
-        arr = structuring(pos)
-        saving(arr, bname + "_dm.h5")
+        arr = dif.structuring(pos, args)
+        dif.saving(arr, bname + "_dm.h5")
 
     elif args["simtype"] == "full_physics":
-        print("----> Write stars <----")
+        print("\n ----> Write stars <----")
         if s.header.num_total[4] >= memory_cutoff:
+            print("data-set is being devided in chunks")
             pnum = 10
 
             for pp in range(pnum):
                 s.read(["Coordinates"], parttype=[4], partition=[pnum, pp])
-                pos_pp = voxeling(s.data["Coordinates"]["stars"])
+                pos_pp = dif.voxeling(s.data["Coordinates"]["stars"], args)
                 pos_pp = pd.DataFrame(pos_pp, dtype=np.int32)
                 pos_pp.columns = ["x", "y", "z"]
-                pos_pp = counting(pos_pp)
+                pos_pp = dif.counting(pos_pp)
 
                 if pp == 0:
                     pos = pos_pp
@@ -96,29 +99,30 @@ for ii in range(len(args["nsnap"])):
                     pos = pd.concat([pos, pos_pp])
                     pos = (
                         pos.groupby(["x", "y", "z"])["c"]
-                        .count()
+                        .sum()
                         .reset_index(name="c")
                     )
         else:
             s.read(["Coordinates"], parttype=[1], partition=[1, 0])
-            pos = voxeling(s.data["Coordinates"]["dm"])
+            pos = dif.voxeling(s.data["Coordinates"]["stars"], args)
             pos = pd.DataFrame(pos, dtype=np.int32)
             pos.columns = ["x", "y", "z"]
-            pos = counting(pos)
+            pos = dif.counting(pos)
 
-        arr = structuring(pos)
-        saving(arr, bname + "_st.h5")
+        arr = dif.structuring(pos, args)
+        dif.saving(arr, bname + "_st.h5")
         
-        print("----> Write dark-matter <----")
+        print("\n ----> Write dark-matter <----")
         if s.header.num_total[1] >= memory_cutoff:
+            print("data-set is being devided in chunks")
             pnum = 10
 
             for pp in range(pnum):
                 s.read(["Coordinates"], parttype=[1], partition=[pnum, pp])
-                pos_pp = voxeling(s.data["Coordinates"]["dm"])
+                pos_pp = dif.voxeling(s.data["Coordinates"]["dm"], args)
                 pos_pp = pd.DataFrame(pos_pp, dtype=np.int32)
                 pos_pp.columns = ["x", "y", "z"]
-                pos_pp = counting(pos_pp)
+                pos_pp = dif.counting(pos_pp)
 
                 if pp == 0:
                     pos = pos_pp
@@ -126,18 +130,18 @@ for ii in range(len(args["nsnap"])):
                     pos = pd.concat([pos, pos_pp])
                     pos = (
                         pos.groupby(["x", "y", "z"])["c"]
-                        .count()
+                        .sum()
                         .reset_index(name="c")
                     )
                 print("dataframes", pos_pp.shape, pos.shape, pos.columns)
         else:
             s.read(["Coordinates"], parttype=[1], partition=[1, 0])
-            pos = voxeling(s.data["Coordinates"]["dm"])
+            pos = dif.voxeling(s.data["Coordinates"]["dm"], args)
             del s
             gc.collect()
             pos = pd.DataFrame(pos, dtype=np.int32)
             pos.columns = ["x", "y", "z"]
-            pos = counting(pos)
+            pos = dif.counting(pos)
 
-        arr = structuring(pos)
-        saving(arr, bname + "_dm.h5")
+        arr = dif.structuring(pos, args)
+        dif.saving(arr, bname + "_dm.h5")
